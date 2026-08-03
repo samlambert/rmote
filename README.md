@@ -18,6 +18,8 @@ script/install  # Release build → /Applications/TV Remote.app and launch
 
 `script/install` signs with your Apple Development identity (team `L2F9LC837N` by default). Override with `CODE_SIGN_IDENTITY` / `DEVELOPMENT_TEAM` if needed.
 
+Regenerate menu bar and app icon PNGs with `script/generate-icons` (installs Pillow on first run; catalog `Contents.json` files are committed separately).
+
 ## Tests
 
 ```bash
@@ -27,7 +29,7 @@ script/test
 ## Usage
 
 1. Launch the app — it appears in the menu bar (no Dock icon).
-2. Look for the **Apple TV remote** icon (`appletvremote.gen4.fill`) in the menu bar, usually near the right side with other menu extras (Wi‑Fi, battery, Control Center). It may sit just left of the Control Center clock area.
+2. Look for the **TV Remote** menu bar icon — a custom Siri Remote silhouette — usually near the right side with other menu extras (Wi‑Fi, battery, Control Center). It may sit just left of the Control Center clock area.
 3. **Click the icon** to open the remote window. Click anywhere outside the window to dismiss it.
 4. Use the **Select Apple TV** menu inside the window to pick a device and connect.
 

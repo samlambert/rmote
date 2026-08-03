@@ -10,7 +10,9 @@ struct TVRemoteApp: App {
         MenuBarExtra {
             MenuRemoteRoot(manager: lifecycle.manager)
         } label: {
-            Label("TV", systemImage: "appletvremote.gen4.fill")
+            Image("MenuBarIcon")
+                .renderingMode(.template)
+                .accessibilityLabel("TV Remote")
         }
         .menuBarExtraStyle(.window)
 

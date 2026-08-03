@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""Generate MenuBarIcon and AppIcon PNGs for TV Remote."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
+
+ROOT = Path(__file__).resolve().parent.parent
+ASSETS = ROOT / "TVRemote" / "Assets.xcassets"
+MENU_BAR_DIR = ASSETS / "MenuBarIcon.imageset"
+APP_ICON_DIR = ASSETS / "AppIcon.appiconset"
+REQUIREMENTS = Path(__file__).resolve().parent / "requirements-icons.txt"
+
+MENU_BAR_SIZES = {
+    "MenuBarIcon.png": 18,
+    "MenuBarIcon@2x.png": 36,
+    "MenuBarIcon@3x.png": 54,
+}
+
+APP_ICON_SIZES = [
+    ("icon_16x16.png", 16, "16x16", "1x"),
+    ("icon_16x16@2x.png", 32, "16x16", "2x"),
+    ("icon_32x32.png", 32, "32x32", "1x"),
+    ("icon_32x32@2x.png", 64, "32x32", "2x"),
+    ("icon_128x128.png", 128, "128x128", "1x"),
+    ("icon_128x128@2x.png", 256, "128x128", "2x"),
+    ("icon_256x256.png", 256, "256x256", "1x"),
+    ("icon_256x256@2x.png", 512, "256x256", "2x"),
+    ("icon_512x512.png", 512, "512x512", "1x"),
+    ("icon_512x512@2x.png", 1024, "512x512", "2x"),
+]
+
+BLACK = (0, 0, 0, 255)
+APP_BG = (48, 48, 52, 255)
+APP_BODY = (22, 22, 24, 255)
+APP_ACCENT = (70, 70, 74, 255)
+APP_PAD_INNER = (38, 38, 42, 255)
+
+DetailMode = Literal["punch", "filled"]
+
+
+def ensure_pillow() -> None:
+    try:
+        import PIL  # noqa: F401
+        return
+    except ImportError:
+        pass
+
+    req = ["--user"]
+    if REQUIREMENTS.is_file():
+        req.extend(["-r", str(REQUIREMENTS)])
+    else:
+        req.append("pillow")
+
+    print("Pillow not found; installing...", file=sys.stderr)
+    subprocess.run([sys.executable, "-m", "pip", "install", *req], check=False)
+
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        print(
+            "Error: Pillow is required. Install with:\n"
+            "  python3 -m pip install --user -r script/requirements-icons.txt",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+ensure_pillow()
+
+from PIL import Image, ImageDraw  # noqa: E402
+
+
+@dataclass(frozen=True)
+class RemoteGeometry:
+    body_left: float
+    body_top: float
+    body_right: float
+    body_bottom: float
+    corner: float
+    cx: float
+    pad_center_y: float
+    pad_radius: float
+    dot_r: float
+    dot_y: float
+    dot_spacing: float
+    nub_w: float
+    nub_h: float
+    nub_cx: float
+    nub_cy: float
+
+
+def remote_geometry(size: int) -> RemoteGeometry:
+    body_width = size * 0.36
+    body_height = size * 0.78
+    body_left = (size - body_width) / 2
+    body_top = (size - body_height) / 2
+    body_right = body_left + body_width
+    body_bottom = body_top + body_height
+    corner = body_width * 0.28
+
+    cx = size / 2
+    pad_center_y = body_top + body_height * 0.32
+    pad_radius = body_width * 0.32
+
+    dot_r = body_width * 0.07
+    dot_y = body_top + body_height * 0.58
+    dot_spacing = body_width * 0.28
+
+    nub_w = body_width * 0.18
+    nub_h = body_height * 0.20
+    nub_cy = body_top + body_height / 2
+    nub_cx = body_right + nub_w * 0.35
+
+    return RemoteGeometry(
+        body_left=body_left,
+        body_top=body_top,
+        body_right=body_right,
+        body_bottom=body_bottom,
+        corner=corner,
+        cx=cx,
+        pad_center_y=pad_center_y,
+        pad_radius=pad_radius,
+        dot_r=dot_r,
+        dot_y=dot_y,
+        dot_spacing=dot_spacing,
+        nub_w=nub_w,
+        nub_h=nub_h,
+        nub_cx=nub_cx,
+        nub_cy=nub_cy,
+    )
+
+
+def _capsule_vertical(
+    draw: ImageDraw.ImageDraw, cx: float, cy: float, width: float, height: float, fill
+) -> None:
+    radius = width / 2
+    top = cy - height / 2
+    bottom = cy + height / 2
+    draw.rounded_rectangle(
+        (cx - width / 2, top, cx + width / 2, bottom),
+        radius=radius,
+        fill=fill,
+    )
+
+
+def punch_circle(img: Image.Image, cx: float, cy: float, r: float) -> None:
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).ellipse((cx - r, cy - r, cx + r, cy + r), fill=255)
+    alpha = img.split()[3]
+    alpha = Image.composite(Image.new("L", img.size, 0), alpha, mask)
+    img.putalpha(alpha)
+
+
+def _draw_body_and_nub(draw: ImageDraw.ImageDraw, geo: RemoteGeometry, fill) -> None:
+    draw.rounded_rectangle(
+        (geo.body_left, geo.body_top, geo.body_right, geo.body_bottom),
+        radius=geo.corner,
+        fill=fill,
+    )
+    _capsule_vertical(draw, geo.nub_cx, geo.nub_cy, geo.nub_w, geo.nub_h, fill)
+
+
+def _draw_pad(
+    img: Image.Image,
+    draw: ImageDraw.ImageDraw,
+    geo: RemoteGeometry,
+    mode: DetailMode,
+) -> None:
+    pad_cx = geo.cx
+    pad_cy = geo.pad_center_y
+    pad_r = geo.pad_radius
+
+    if mode == "punch":
+        punch_circle(img, pad_cx, pad_cy, pad_r)
+        return
+
+    draw.ellipse(
+        (pad_cx - pad_r, pad_cy - pad_r, pad_cx + pad_r, pad_cy + pad_r),
+        fill=APP_ACCENT,
+    )
+    inner_r = pad_r * 0.72
+    draw.ellipse(
+        (pad_cx - inner_r, pad_cy - inner_r, pad_cx + inner_r, pad_cy + inner_r),
+        fill=APP_PAD_INNER,
+    )
+
+
+def _draw_dots(
+    img: Image.Image,
+    draw: ImageDraw.ImageDraw,
+    geo: RemoteGeometry,
+    mode: DetailMode,
+) -> None:
+    for dx in (-geo.dot_spacing / 2, geo.dot_spacing / 2):
+        dot_cx = geo.cx + dx
+        dot_r = geo.dot_r
+        if mode == "punch":
+            punch_circle(img, dot_cx, geo.dot_y, dot_r)
+        else:
+            draw.ellipse(
+                (dot_cx - dot_r, geo.dot_y - dot_r, dot_cx + dot_r, geo.dot_y + dot_r),
+                fill=APP_ACCENT,
+            )
+
+
+def draw_remote(
+    size: int,
+    *,
+    background: tuple[int, int, int, int],
+    body_fill,
+    detail_mode: DetailMode,
+) -> Image.Image:
+    geo = remote_geometry(size)
+    img = Image.new("RGBA", (size, size), background)
+    draw = ImageDraw.Draw(img)
+    _draw_body_and_nub(draw, geo, body_fill)
+    _draw_pad(img, draw, geo, detail_mode)
+    _draw_dots(img, draw, geo, detail_mode)
+    return img
+
+
+def draw_menu_bar_remote(size: int) -> Image.Image:
+    return draw_remote(size, background=(0, 0, 0, 0), body_fill=BLACK, detail_mode="punch")
+
+
+def draw_app_icon(size: int) -> Image.Image:
+    return draw_remote(size, background=APP_BG, body_fill=APP_BODY, detail_mode="filled")
+
+
+def write_json_if_missing(path: Path, contents: dict) -> None:
+    if not path.exists():
+        path.write_text(json.dumps(contents, indent=2) + "\n")
+
+
+def write_menu_bar_icons() -> None:
+    MENU_BAR_DIR.mkdir(parents=True, exist_ok=True)
+    for filename, px in MENU_BAR_SIZES.items():
+        draw_menu_bar_remote(px).save(MENU_BAR_DIR / filename, "PNG")
+
+    write_json_if_missing(
+        MENU_BAR_DIR / "Contents.json",
+        {
+            "images": [
+                {"filename": "MenuBarIcon.png", "idiom": "universal", "scale": "1x"},
+                {"filename": "MenuBarIcon@2x.png", "idiom": "universal", "scale": "2x"},
+                {"filename": "MenuBarIcon@3x.png", "idiom": "universal", "scale": "3x"},
+            ],
+            "info": {"author": "xcode", "version": 1},
+            "properties": {"template-rendering-intent": "template"},
+        },
+    )
+
+
+def write_app_icons() -> None:
+    APP_ICON_DIR.mkdir(parents=True, exist_ok=True)
+    for filename, px, _logical_size, _scale in APP_ICON_SIZES:
+        draw_app_icon(px).save(APP_ICON_DIR / filename, "PNG")
+
+    write_json_if_missing(
+        APP_ICON_DIR / "Contents.json",
+        {
+            "images": [
+                {
+                    "filename": filename,
+                    "idiom": "mac",
+                    "scale": scale,
+                    "size": logical_size,
+                }
+                for filename, _px, logical_size, scale in APP_ICON_SIZES
+            ],
+            "info": {"author": "xcode", "version": 1},
+        },
+    )
+
+
+def main() -> None:
+    ASSETS.mkdir(parents=True, exist_ok=True)
+    write_json_if_missing(
+        ASSETS / "Contents.json",
+        {"info": {"author": "xcode", "version": 1}},
+    )
+    write_menu_bar_icons()
+    write_app_icons()
+    print(f"Wrote menu bar icons to {MENU_BAR_DIR}")
+    print(f"Wrote app icons to {APP_ICON_DIR}")
+
+
+if __name__ == "__main__":
+    main()

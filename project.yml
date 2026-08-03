@@ -33,6 +33,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: TVRemote/TVRemote.entitlements
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - package: ItsytvCore
         product: ItsytvCore
