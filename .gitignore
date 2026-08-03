@@ -2,6 +2,9 @@
 DerivedData/
 build/
 dist/
+.build/
+*.xcodeproj
+*.xcworkspace
 *.xcuserdata
 xcuserdata/
 .swiftpm/

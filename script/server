@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+"$ROOT/script/setup"
+
+xcodebuild build \
+  -scheme "TV Remote" \
+  -destination 'platform=macOS' \
+  -derivedDataPath "$ROOT/DerivedData" \
+  -configuration Debug \
+  CODE_SIGN_IDENTITY="-" \
+  CODE_SIGNING_ALLOWED=YES
+
+APP="$ROOT/DerivedData/Build/Products/Debug/TV Remote.app"
+if [ ! -d "$APP" ]; then
+  echo "Built app not found at $APP" >&2
+  exit 1
+fi
+
+pkill -f "TV Remote.app/Contents/MacOS/TV Remote" || true
+sleep 0.5
+
+open "$APP"

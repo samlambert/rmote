@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+missing=()
+
+if ! command -v xcodebuild >/dev/null 2>&1; then
+  missing+=("Xcode (xcodebuild)")
+fi
+
+if ! command -v xcodegen >/dev/null 2>&1; then
+  if command -v brew >/dev/null 2>&1; then
+    echo "Installing xcodegen via Homebrew..."
+    brew install xcodegen
+  else
+    missing+=("xcodegen (install via: brew install xcodegen)")
+  fi
+fi
+
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "Missing dependencies:" >&2
+  for dep in "${missing[@]}"; do
+    echo "  - $dep" >&2
+  done
+  exit 1
+fi
+
+echo "Bootstrap complete."
