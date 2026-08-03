@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if [ ! -d "$ROOT/TV Remote.xcodeproj" ]; then
+  "$ROOT/script/setup"
+fi
+
+xcodebuild test \
+  -scheme "TV Remote" \
+  -destination 'platform=macOS' \
+  -derivedDataPath "$ROOT/DerivedData" \
+  CODE_SIGN_IDENTITY="-" \
+  CODE_SIGNING_ALLOWED=YES
