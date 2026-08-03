@@ -105,8 +105,8 @@ struct RemotePanelView: View {
                 }
                 GridRow {
                     remoteButton("power", action: .power)
-                    remoteButton("minus", action: .volumeDown)
-                    remoteButton("plus", action: .volumeUp)
+                    volumeRocker
+                        .gridCellColumns(2)
                 }
             }
         }
@@ -156,17 +156,64 @@ struct RemotePanelView: View {
         .buttonStyle(.plain)
     }
 
-    private func remoteButton(_ symbol: String, action: RemoteAction) -> some View {
-        Button {
+    private enum RemoteButtonShape {
+        case circle
+        case rockerSegment
+    }
+
+    @ViewBuilder
+    private func remoteButton(
+        _ symbol: String,
+        action: RemoteAction,
+        shape: RemoteButtonShape = .circle,
+        accessibilityLabel: String? = nil
+    ) -> some View {
+        let button = Button {
             onAction(action)
         } label: {
-            Image(systemName: symbol)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(.white.opacity(0.9))
+            remoteButtonLabel(symbol, shape: shape)
+        }
+        .buttonStyle(.plain)
+
+        if let accessibilityLabel {
+            button.accessibilityLabel(accessibilityLabel)
+        } else {
+            button
+        }
+    }
+
+    @ViewBuilder
+    private func remoteButtonLabel(_ symbol: String, shape: RemoteButtonShape) -> some View {
+        let icon = Image(systemName: symbol)
+            .font(.system(size: 18, weight: .medium))
+            .foregroundStyle(.white.opacity(0.9))
+
+        switch shape {
+        case .circle:
+            icon
                 .frame(width: 44, height: 44)
                 .background(Color(white: 0.2))
                 .clipShape(Circle())
+        case .rockerSegment:
+            icon
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+    }
+
+    private var volumeRocker: some View {
+        HStack(spacing: 0) {
+            remoteButton("minus", action: .volumeDown, shape: .rockerSegment, accessibilityLabel: "Volume down")
+
+            Rectangle()
+                .fill(Color.white.opacity(0.12))
+                .frame(width: 1)
+
+            remoteButton("plus", action: .volumeUp, shape: .rockerSegment, accessibilityLabel: "Volume up")
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .background(Color(white: 0.2))
+        .clipShape(Capsule())
     }
 }
