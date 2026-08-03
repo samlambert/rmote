@@ -79,9 +79,9 @@ struct RemotePanelView: View {
         pinReady = false
         pinDigits = ""
         prepareTask = Task { @MainActor in
-            defer { prepareTask = nil }
             try? await Task.sleep(for: .seconds(0.5))
             guard !Task.isCancelled else { return }
+            defer { prepareTask = nil }
             guard manager.connectionStatus == .pairing else { return }
             guard !pinSubmitted else { return }
             pinReady = true
@@ -120,9 +120,9 @@ struct RemotePanelView: View {
                 .fill(Color(white: 0.18))
                 .frame(width: 140, height: 140)
 
-            VStack(spacing: -12) {
+            VStack(spacing: 0) {
                 dPadButton("chevron.up", action: .up)
-                HStack(spacing: -12) {
+                HStack(spacing: 0) {
                     dPadButton("chevron.left", action: .left)
                     Button {
                         onAction(.select)
