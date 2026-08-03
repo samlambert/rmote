@@ -7,6 +7,7 @@ struct RemotePanelView: View {
 
     @State private var pinDigits = ""
     @State private var pinReady = false
+    @State private var pinSubmitted = false
     @State private var prepareTask: Task<Void, Never>?
     @FocusState private var pinFocused: Bool
 
@@ -20,11 +21,13 @@ struct RemotePanelView: View {
         }
         .onChange(of: manager.connectionStatus) { _, newStatus in
             if newStatus == .pairing {
+                pinSubmitted = false
                 beginPINPrepare()
             } else {
                 cancelPINPrepare()
                 pinDigits = ""
                 pinReady = false
+                pinSubmitted = false
             }
         }
     }
@@ -50,6 +53,7 @@ struct RemotePanelView: View {
                     }
                     if sanitized.count == 4, pinReady {
                         pinReady = false
+                        pinSubmitted = true
                         manager.submitPIN(sanitized)
                     }
                 }
@@ -69,6 +73,7 @@ struct RemotePanelView: View {
 
     private func beginPINPrepare() {
         guard manager.connectionStatus == .pairing else { return }
+        guard !pinSubmitted else { return }
         guard prepareTask == nil else { return }
 
         pinReady = false
@@ -78,6 +83,7 @@ struct RemotePanelView: View {
             try? await Task.sleep(for: .seconds(0.5))
             guard !Task.isCancelled else { return }
             guard manager.connectionStatus == .pairing else { return }
+            guard !pinSubmitted else { return }
             pinReady = true
             pinFocused = true
         }
