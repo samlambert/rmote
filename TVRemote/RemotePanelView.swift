@@ -48,11 +48,8 @@ struct RemotePanelView: View {
                         pinDigits = sanitized
                         return
                     }
-                    if sanitized.count < 4 {
-                        cancelPINPrepare()
-                        return
-                    }
                     if sanitized.count == 4, pinReady {
+                        pinReady = false
                         manager.submitPIN(sanitized)
                     }
                 }
