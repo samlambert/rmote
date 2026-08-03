@@ -26,7 +26,7 @@ targets:
       - path: TVRemote
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.samlambert.menutv
+        PRODUCT_BUNDLE_IDENTIFIER: com.samlambert.appletvmenubar
         PRODUCT_NAME: TV Remote
         PRODUCT_MODULE_NAME: TVRemote
         INFOPLIST_FILE: TVRemote/Info.plist

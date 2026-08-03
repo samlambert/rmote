@@ -13,7 +13,10 @@ A lean macOS menu bar app for controlling Apple TV over the local network. Click
 ```bash
 script/setup    # install xcodegen if needed, generate Xcode project
 script/server   # build Debug and launch the app
+script/install  # Release build → /Applications/TV Remote.app and launch
 ```
+
+`script/install` signs with your Apple Development identity (team `L2F9LC837N` by default). Override with `CODE_SIGN_IDENTITY` / `DEVELOPMENT_TEAM` if needed.
 
 ## Tests
 
