@@ -20,8 +20,12 @@ struct ComposeAwareTextField: NSViewRepresentable {
         field.focusRingType = .none
         field.textColor = .white
         field.delegate = context.coordinator
-        DispatchQueue.main.async { [weak field] in
-            guard let field, let window = field.window, field.superview != nil else {
+        DispatchQueue.main.async { [weak field, coordinator = context.coordinator] in
+            guard !coordinator.isAutofocusCancelled,
+                  let field,
+                  let window = field.window,
+                  field.superview != nil,
+                  window.isVisible else {
                 return
             }
             NSApp.activate(ignoringOtherApps: true)
@@ -38,8 +42,13 @@ struct ComposeAwareTextField: NSViewRepresentable {
         }
     }
 
+    static func dismantleNSView(_ nsView: NSTextField, coordinator: Coordinator) {
+        coordinator.isAutofocusCancelled = true
+    }
+
     final class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: ComposeAwareTextField
+        var isAutofocusCancelled = false
 
         init(_ parent: ComposeAwareTextField) {
             self.parent = parent
