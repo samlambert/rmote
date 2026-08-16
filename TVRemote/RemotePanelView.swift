@@ -10,6 +10,8 @@ struct RemotePanelView: View {
     @State private var pinSubmitted = false
     @State private var prepareTask: Task<Void, Never>?
     @FocusState private var pinFocused: Bool
+    @State private var showingKeyboard = false
+    @State private var keyboardText = ""
 
     var body: some View {
         Group {
@@ -29,6 +31,12 @@ struct RemotePanelView: View {
                 pinReady = false
                 pinSubmitted = false
             }
+            if newStatus != .connected {
+                closeKeyboard()
+            }
+        }
+        .onDisappear {
+            closeKeyboard()
         }
     }
 
@@ -94,8 +102,37 @@ struct RemotePanelView: View {
         prepareTask = nil
     }
 
+    private func closeKeyboard() {
+        showingKeyboard = false
+        keyboardText = ""
+        manager.resetTextInputState()
+    }
+
+    private func toggleKeyboard() {
+        if showingKeyboard {
+            closeKeyboard()
+        } else {
+            keyboardText = ""
+            showingKeyboard = true
+        }
+    }
+
     private var remoteControls: some View {
         VStack(spacing: 20) {
+            if showingKeyboard {
+                ComposeAwareTextField(
+                    text: $keyboardText,
+                    placeholder: "Type on Apple TV…",
+                    onCommittedTextChange: { committed in
+                        manager.updateRemoteText(committed)
+                    },
+                    onSubmit: closeKeyboard
+                )
+                .frame(height: 28)
+                .padding(.horizontal, 10)
+                .background(Color(white: 0.2))
+                .clipShape(Capsule())
+            }
             dPad
             Grid(horizontalSpacing: 20, verticalSpacing: 20) {
                 GridRow {
@@ -109,9 +146,26 @@ struct RemotePanelView: View {
                     remoteButton("plus", action: .volumeUp)
                 }
             }
+            keyboardButton
         }
         .disabled(manager.connectionStatus != .connected)
         .opacity(manager.connectionStatus == .connected ? 1 : 0.45)
+    }
+
+    private var keyboardButton: some View {
+        Button {
+            toggleKeyboard()
+        } label: {
+            Image(systemName: "keyboard")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(showingKeyboard ? Color.white : Color.white.opacity(0.9))
+                .frame(width: 44, height: 44)
+                .background(showingKeyboard ? Color(white: 0.38) : Color(white: 0.2))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(showingKeyboard ? "Close keyboard input" : "Open keyboard input")
+        .help("Type on Apple TV")
     }
 
     private var dPad: some View {
