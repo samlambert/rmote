@@ -30,6 +30,7 @@ script/test
 2. Look for the **Apple TV remote** icon (`appletvremote.gen4.fill`) in the menu bar, usually near the right side with other menu extras (Wi‑Fi, battery, Control Center). It may sit just left of the Control Center clock area.
 3. **Click the icon** to open the remote window. Click anywhere outside the window to dismiss it.
 4. Use the **Select Apple TV** menu inside the window to pick a device and connect.
+5. Select a text field on the Apple TV, then click the keyboard button to type from the Mac.
 
 ## Pairing
 
