@@ -56,7 +56,7 @@ final class LastDeviceReconnect {
     }
 
     private func run() async {
-        for _ in 1...maxAttempts {
+        for attempt in 1...maxAttempts {
             guard !Task.isCancelled else { return }
             guard let device = await waitForLastDevice() else { return }
             guard !Task.isCancelled, stillIdle() else { return }
@@ -64,9 +64,23 @@ final class LastDeviceReconnect {
             if await reachedPairingOrConnected(startedDeviceID: device.id) { return }
             if isOurConnectingAttempt(deviceID: device.id) {
                 manager.disconnect()
+                // Stale Bonjour hits survive hang abort; knock before retrying
+                // so the next waitForLastDevice does not skip wake recovery.
+                guard attempt < maxAttempts else { return }
+                await knockBeforeRetry()
+                if !stillIdle() { return }
             } else if !stillIdle() {
                 return
             }
+        }
+    }
+
+    private func knockBeforeRetry() async {
+        manager.refreshScanning()
+        let deadline = Date().addingTimeInterval(knockInterval)
+        while !Task.isCancelled, Date() < deadline {
+            if !stillIdle() { return }
+            try? await Task.sleep(for: pollInterval)
         }
     }
 

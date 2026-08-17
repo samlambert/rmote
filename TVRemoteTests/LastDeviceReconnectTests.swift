@@ -115,7 +115,8 @@ final class LastDeviceReconnectTests: XCTestCase {
         let reconnect = LastDeviceReconnect(
             manager: manager,
             connectTimeout: 0.05,
-            pollInterval: .milliseconds(5)
+            pollInterval: .milliseconds(5),
+            knockInterval: 0.01
         )
         defer { reconnect.stop() }
 
