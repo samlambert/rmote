@@ -22,13 +22,18 @@ struct TVRemoteApp: App {
 
 final class AppLifecycle: NSObject, NSApplicationDelegate {
     let manager = AppleTVManager()
+    private var lastDeviceReconnect: LastDeviceReconnect?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         manager.startScanning()
-        _ = manager.connectToLastConnectedDevice()
+        guard NSClassFromString("XCTestCase") == nil else { return }
+        let reconnect = LastDeviceReconnect(manager: manager)
+        lastDeviceReconnect = reconnect
+        reconnect.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        lastDeviceReconnect?.stop()
         manager.stopScanning()
     }
 
