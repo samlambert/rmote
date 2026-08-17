@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+REQS = Path(__file__).resolve().parent / "requirements-icons.txt"
+ASSETS = ROOT / "Rmote" / "Assets.xcassets"
+APPICON = ASSETS / "AppIcon.appiconset"
+MENUBAR = ASSETS / "MenuBarIcon.imageset"
+SUPERSAMPLE = 8
+
+
+def ensure_pillow():
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "-r", str(REQS)]
+        )
+
+
+def remote_rects(size):
+    body_w = 0.38 * size
+    body_h = 0.72 * size
+    body_x = (size - body_w) / 2
+    body_y = (size - body_h) / 2
+    radius = 0.22 * body_w
+    body = (body_x, body_y, body_x + body_w, body_y + body_h)
+    punches = []
+    for frac, r_frac in ((0.32, 0.28), (0.58, 0.08), (0.72, 0.08)):
+        r = r_frac * body_w
+        cx = size / 2
+        cy = body_y + frac * body_h
+        punches.append((cx - r, cy - r, cx + r, cy + r))
+    return body, radius, punches
+
+
+def draw_app_icon(size):
+    from PIL import Image, ImageDraw
+
+    scale = SUPERSAMPLE
+    big = size * scale
+    img = Image.new("RGB", (big, big), (0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    body, radius, punches = remote_rects(big)
+    draw.rounded_rectangle(body, radius=radius, fill=(255, 255, 255))
+    for punch in punches:
+        draw.ellipse(punch, fill=(0, 0, 0))
+    img = img.resize((size, size), Image.Resampling.BOX)
+    return img.point(lambda p: 255 if p >= 128 else 0)
+
+
+def draw_menu_bar_icon(size):
+    from PIL import Image, ImageDraw
+
+    scale = SUPERSAMPLE
+    big = size * scale
+    mask = Image.new("L", (big, big), 0)
+    draw = ImageDraw.Draw(mask)
+    body, radius, punches = remote_rects(big)
+    draw.rounded_rectangle(body, radius=radius, fill=255)
+    for punch in punches:
+        draw.ellipse(punch, fill=0)
+    mask = mask.resize((size, size), Image.Resampling.BOX)
+    mask = mask.point(lambda p: 255 if p >= 128 else 0)
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    black = Image.new("RGBA", (size, size), (0, 0, 0, 255))
+    img.paste(black, mask=mask)
+    return img
+
+
+def write_json(path, data):
+    path.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def main():
+    ensure_pillow()
+    APPICON.mkdir(parents=True, exist_ok=True)
+    MENUBAR.mkdir(parents=True, exist_ok=True)
+
+    write_json(
+        ASSETS / "Contents.json",
+        {"info": {"author": "xcode", "version": 1}},
+    )
+
+    app_images = []
+    for point, scale in (
+        (16, 1),
+        (16, 2),
+        (32, 1),
+        (32, 2),
+        (128, 1),
+        (128, 2),
+        (256, 1),
+        (256, 2),
+        (512, 1),
+        (512, 2),
+    ):
+        pixels = point * scale
+        suffix = "" if scale == 1 else f"@{scale}x"
+        filename = f"icon_{point}x{point}{suffix}.png"
+        draw_app_icon(pixels).save(APPICON / filename, format="PNG")
+        app_images.append(
+            {
+                "filename": filename,
+                "idiom": "mac",
+                "scale": f"{scale}x",
+                "size": f"{point}x{point}",
+            }
+        )
+    write_json(
+        APPICON / "Contents.json",
+        {"images": app_images, "info": {"author": "xcode", "version": 1}},
+    )
+
+    menu_files = (
+        ("MenuBarIcon.png", 18),
+        ("MenuBarIcon@2x.png", 36),
+        ("MenuBarIcon@3x.png", 54),
+    )
+    for filename, pixels in menu_files:
+        draw_menu_bar_icon(pixels).save(MENUBAR / filename, format="PNG")
+    write_json(
+        MENUBAR / "Contents.json",
+        {
+            "images": [
+                {"filename": "MenuBarIcon.png", "idiom": "universal", "scale": "1x"},
+                {"filename": "MenuBarIcon@2x.png", "idiom": "universal", "scale": "2x"},
+                {"filename": "MenuBarIcon@3x.png", "idiom": "universal", "scale": "3x"},
+            ],
+            "info": {"author": "xcode", "version": 1},
+            "properties": {"template-rendering-intent": "template"},
+        },
+    )
+
+
+if __name__ == "__main__":
+    main()
