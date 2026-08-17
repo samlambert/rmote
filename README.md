@@ -11,7 +11,7 @@ The first launch may be blocked because the app is not notarized. Right-click th
 ## Requirements
 
 - macOS 14.0 or later
-- Xcode 15+ with Command Line Tools
+- Xcode 16+ with Command Line Tools
 - [Homebrew](https://brew.sh) (for `xcodegen` via bootstrap)
 
 ## Build
