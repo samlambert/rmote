@@ -146,6 +146,7 @@ struct RemotePanelView: View {
                     remoteButton("plus", action: .volumeUp)
                 }
             }
+            .onboardingHighlight(.buttons)
             keyboardButton
         }
         .disabled(manager.connectionStatus != .connected)
@@ -166,6 +167,7 @@ struct RemotePanelView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(showingKeyboard ? "Close keyboard input" : "Open keyboard input")
         .help("Type on Apple TV")
+        .onboardingHighlight(.keyboard)
     }
 
     private var dPad: some View {
@@ -213,6 +215,7 @@ struct RemotePanelView: View {
             )
         }
         .help("Two-finger swipe to navigate; two-finger tap to select")
+        .onboardingHighlight(.trackpad)
     }
 
     private func dPadButton(_ symbol: String, action: RemoteAction) -> some View {

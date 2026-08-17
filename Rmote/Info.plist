@@ -23,7 +23,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>TV Remote discovers Apple TVs on your local network and sends remote control commands.</string>
+	<string>rmote discovers Apple TVs on your local network and sends remote control commands.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_companion-link._tcp</string>

@@ -1,4 +1,4 @@
-name: TV Remote
+name: rmote
 options:
   bundleIdPrefix: com.samlambert
   deploymentTarget:
@@ -19,42 +19,43 @@ settings:
     DEVELOPMENT_TEAM: ""
 
 targets:
-  TVRemote:
+  Rmote:
     type: application
     platform: macOS
     sources:
-      - path: TVRemote
+      - path: Rmote
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.samlambert.appletvmenubar
-        PRODUCT_NAME: TV Remote
-        PRODUCT_MODULE_NAME: TVRemote
-        INFOPLIST_FILE: TVRemote/Info.plist
-        CODE_SIGN_ENTITLEMENTS: TVRemote/TVRemote.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.samlambert.rmote
+        PRODUCT_NAME: rmote
+        PRODUCT_MODULE_NAME: Rmote
+        INFOPLIST_FILE: Rmote/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Rmote/Rmote.entitlements
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - package: ItsytvCore
         product: ItsytvCore
 
-  TVRemoteTests:
+  RmoteTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: TVRemoteTests
+      - path: RmoteTests
     dependencies:
-      - target: TVRemote
+      - target: Rmote
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TV Remote.app/Contents/MacOS/TV Remote"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/rmote.app/Contents/MacOS/rmote"
         BUNDLE_LOADER: "$(TEST_HOST)"
 
 schemes:
-  TV Remote:
+  rmote:
     build:
       targets:
-        TVRemote: all
+        Rmote: all
     test:
       targets:
-        - TVRemoteTests
+        - RmoteTests

@@ -4,7 +4,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-DEST="${RMOTE_INSTALL_DIR:-/Applications}/rmote.app"
 IDENTITY="${CODE_SIGN_IDENTITY:--}"
 TEAM="${DEVELOPMENT_TEAM:-}"
 
@@ -26,13 +25,32 @@ if [ ! -d "$APP" ]; then
   exit 1
 fi
 
-pkill -f "rmote.app/Contents/MacOS/rmote" 2>/dev/null || true
-sleep 0.5
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
+DMG="$ROOT/dist/rmote-${VERSION}.dmg"
 
-echo "Installing to $DEST"
-rm -rf "$DEST"
-cp -R "$APP" "$DEST"
-xattr -cr "$DEST" 2>/dev/null || true
+STAGE="$(mktemp -d)"
+cleanup() {
+  rm -rf "$STAGE"
+}
+trap cleanup EXIT
 
-open "$DEST"
-echo "Installed and launched: $DEST"
+mkdir -p "$STAGE"
+cp -R "$APP" "$STAGE/rmote.app"
+xattr -cr "$STAGE/rmote.app"
+ln -s /Applications "$STAGE/Applications"
+
+mkdir -p "$ROOT/dist"
+rm -f "$DMG"
+
+hdiutil create \
+  -volname "rmote" \
+  -srcfolder "$STAGE" \
+  -ov \
+  -format UDZO \
+  "$DMG"
+
+if [ -z "${CI:-}" ] && [ -t 1 ]; then
+  open -R "$DMG"
+fi
+
+echo "Created $DMG"
