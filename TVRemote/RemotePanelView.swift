@@ -195,6 +195,24 @@ struct RemotePanelView: View {
                 dPadButton("chevron.down", action: .down)
             }
         }
+        .background {
+            RemoteTrackpadGestureView(
+                isEnabled: manager.connectionStatus == .connected,
+                onTouchBegan: { size in
+                    manager.touchBegan(referenceSize: size)
+                },
+                onTouchMoved: { translation in
+                    manager.touchMoved(translation: translation)
+                },
+                onTouchEnded: { translation, velocity in
+                    manager.touchEnded(translation: translation, velocity: velocity)
+                },
+                onTwoFingerTap: {
+                    onAction(.select)
+                }
+            )
+        }
+        .help("Two-finger swipe to navigate; two-finger tap to select")
     }
 
     private func dPadButton(_ symbol: String, action: RemoteAction) -> some View {
