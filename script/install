@@ -4,41 +4,29 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-DEST="${TV_REMOTE_INSTALL_DIR:-/Applications}/TV Remote.app"
-TEAM_ID="${DEVELOPMENT_TEAM:-L2F9LC837N}"
+DEST="${RMOTE_INSTALL_DIR:-/Applications}/rmote.app"
+IDENTITY="${CODE_SIGN_IDENTITY:--}"
+TEAM="${DEVELOPMENT_TEAM:-}"
 
 "$ROOT/script/setup"
 
-IDENTITY="${CODE_SIGN_IDENTITY:-}"
-if [ -z "$IDENTITY" ]; then
-  IDENTITY="$(
-    security find-identity -v -p codesigning 2>/dev/null \
-      | awk -F'"' '/Apple Development/ { print $2; exit }'
-  )"
-fi
-if [ -z "$IDENTITY" ]; then
-  echo "No Apple Development signing identity found." >&2
-  echo "Install a development certificate, or set CODE_SIGN_IDENTITY." >&2
-  exit 1
-fi
-
-echo "Building Release with: $IDENTITY (team $TEAM_ID)"
+echo "Building Release with: $IDENTITY${TEAM:+ (team $TEAM)}"
 xcodebuild build \
-  -scheme "TV Remote" \
+  -scheme "rmote" \
   -destination 'platform=macOS' \
   -derivedDataPath "$ROOT/DerivedData" \
   -configuration Release \
   CODE_SIGN_IDENTITY="$IDENTITY" \
-  DEVELOPMENT_TEAM="$TEAM_ID" \
+  DEVELOPMENT_TEAM="$TEAM" \
   CODE_SIGN_STYLE=Manual
 
-APP="$ROOT/DerivedData/Build/Products/Release/TV Remote.app"
+APP="$ROOT/DerivedData/Build/Products/Release/rmote.app"
 if [ ! -d "$APP" ]; then
   echo "Built app not found at $APP" >&2
   exit 1
 fi
 
-pkill -f "TV Remote.app/Contents/MacOS/TV Remote" 2>/dev/null || true
+pkill -f "rmote.app/Contents/MacOS/rmote" 2>/dev/null || true
 sleep 0.5
 
 echo "Installing to $DEST"

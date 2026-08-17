@@ -1,5 +1,5 @@
 import XCTest
-@testable import TVRemote
+@testable import Rmote
 
 final class RemoteTrackpadGestureTests: XCTestCase {
 

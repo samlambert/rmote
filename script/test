@@ -4,12 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if [ ! -d "$ROOT/TV Remote.xcodeproj" ]; then
+if [ ! -d "$ROOT/rmote.xcodeproj" ]; then
   "$ROOT/script/setup"
 fi
 
 xcodebuild test \
-  -scheme "TV Remote" \
+  -scheme "rmote" \
   -destination 'platform=macOS' \
   -derivedDataPath "$ROOT/DerivedData" \
   CODE_SIGN_IDENTITY="-" \

@@ -3,14 +3,16 @@ import SwiftUI
 import ItsytvCore
 
 @main
-struct TVRemoteApp: App {
+struct RmoteApp: App {
     @NSApplicationDelegateAdaptor(AppLifecycle.self) private var lifecycle
 
     var body: some Scene {
         MenuBarExtra {
             MenuRemoteRoot(manager: lifecycle.manager)
         } label: {
-            Label("TV", systemImage: "appletvremote.gen4.fill")
+            Image("MenuBarIcon")
+                .renderingMode(.template)
+                .accessibilityLabel("rmote")
         }
         .menuBarExtraStyle(.window)
 

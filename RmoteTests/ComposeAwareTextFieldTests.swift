@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 import XCTest
-@testable import TVRemote
+@testable import Rmote
 
 final class ComposeAwareTextFieldTests: XCTestCase {
 
