@@ -137,6 +137,12 @@ struct RemoteTrackpadGestureView: NSViewRepresentable {
                     return handleDirect(event, phase: directPhase)
                 }
 
+                // Careful swipes end with no momentum sequence, so a post-touch
+                // claim must not stay sticky across later window scroll gestures.
+                if hasDirect {
+                    ignoreMomentum = false
+                }
+
                 if hasMomentum, !hasDirect, ignoreMomentum {
                     return handleMomentum(event, phase: momentumPhase)
                 }
@@ -236,6 +242,9 @@ struct RemoteTrackpadGestureView: NSViewRepresentable {
         }
 
         private func beginTouch(at timestamp: TimeInterval, captureSize: CGSize) {
+            if isTouchActive {
+                endTouch(velocity: .zero)
+            }
             motion.begin(at: timestamp)
             isTouchActive = true
             onTouchBegan(captureSize)
@@ -266,6 +275,7 @@ struct RemoteTrackpadGestureView: NSViewRepresentable {
 
         private func finishActiveTouchIfNeeded() {
             endTouch(velocity: .zero)
+            ignoreMomentum = false
         }
     }
 
