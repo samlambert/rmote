@@ -4,8 +4,32 @@ import ItsytvCore
 
 struct MenuRemoteRoot: View {
     var manager: AppleTVManager
+    @StateObject private var onboarding = OnboardingController()
 
     var body: some View {
+        VStack(spacing: 16) {
+            tourContent
+            if onboarding.overlayVisible(isPairing: isPairing) {
+                OnboardingChrome(
+                    step: onboarding.currentStep,
+                    onNext: { onboarding.next() },
+                    onSkip: { onboarding.skip() }
+                )
+            }
+        }
+        .padding(20)
+        .frame(width: 240)
+        .background(Color(white: 0.12))
+        .onAppear {
+            onboarding.startIfNeeded()
+        }
+    }
+
+    private var isPairing: Bool {
+        manager.connectionStatus == .pairing
+    }
+
+    private var tourContent: some View {
         VStack(spacing: 16) {
             header
             RemotePanelView(manager: manager) { action in
@@ -13,9 +37,15 @@ struct MenuRemoteRoot: View {
             }
             footer
         }
-        .padding(20)
-        .frame(width: 240)
-        .background(Color(white: 0.12))
+        .overlayPreferenceValue(OnboardingHighlightKey.self) { anchors in
+            if onboarding.overlayVisible(isPairing: isPairing) {
+                GeometryReader { geo in
+                    CoachMarkSpotlight(
+                        hole: anchors[onboarding.currentStep.highlight].map { geo[$0] }
+                    )
+                }
+            }
+        }
     }
 
     private var header: some View {
@@ -62,6 +92,7 @@ struct MenuRemoteRoot: View {
             .frame(maxWidth: .infinity)
         }
         .menuStyle(.borderlessButton)
+        .onboardingHighlight(.devicePicker)
     }
 
     private var footer: some View {
@@ -69,6 +100,11 @@ struct MenuRemoteRoot: View {
             Button("Rescan") {
                 manager.refreshScanning()
             }
+            Spacer()
+            Button("Tips") {
+                onboarding.replay()
+            }
+            .accessibilityLabel("Replay tips")
             Spacer()
             Button("Quit") {
                 NSApp.terminate(nil)
