@@ -4,7 +4,7 @@ A macOS menu bar app that controls Apple TV on the local network. Click the menu
 
 ## Install
 
-Download the DMG from [GitHub Releases](https://github.com/samlambert/remote-desktop/releases) and drag `rmote` into Applications.
+Download the DMG from [GitHub Releases](https://github.com/samlambert/rmote/releases) and drag `rmote` into Applications.
 
 The first launch may be blocked because the app is not notarized. Right-click the app, choose Open, then confirm.
 
