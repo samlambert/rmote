@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+IDENTITY="${CODE_SIGN_IDENTITY:--}"
+TEAM="${DEVELOPMENT_TEAM:-}"
+
+"$ROOT/script/setup"
+
+echo "Building Release with: $IDENTITY${TEAM:+ (team $TEAM)}"
+xcodebuild build \
+  -scheme "rmote" \
+  -destination 'platform=macOS' \
+  -derivedDataPath "$ROOT/DerivedData" \
+  -configuration Release \
+  CODE_SIGN_IDENTITY="$IDENTITY" \
+  DEVELOPMENT_TEAM="$TEAM" \
+  CODE_SIGN_STYLE=Manual
+
+APP="$ROOT/DerivedData/Build/Products/Release/rmote.app"
+if [ ! -d "$APP" ]; then
+  echo "Built app not found at $APP" >&2
+  exit 1
+fi
+
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")"
+DMG="$ROOT/dist/rmote-${VERSION}.dmg"
+
+STAGE="$(mktemp -d)"
+cleanup() {
+  rm -rf "$STAGE"
+}
+trap cleanup EXIT
+
+mkdir -p "$STAGE"
+cp -R "$APP" "$STAGE/rmote.app"
+xattr -cr "$STAGE/rmote.app"
+ln -s /Applications "$STAGE/Applications"
+
+mkdir -p "$ROOT/dist"
+rm -f "$DMG"
+
+hdiutil create \
+  -volname "rmote" \
+  -srcfolder "$STAGE" \
+  -ov \
+  -format UDZO \
+  "$DMG"
+
+if [ -z "${CI:-}" ] && [ -t 1 ]; then
+  open -R "$DMG"
+fi
+
+echo "Created $DMG"
